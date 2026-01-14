@@ -47,10 +47,10 @@ uv venv nanotron --python 3.11 && source nanotron/bin/activate && uv pip install
 > [!TIP]
 > For Hugging Face cluster users, add `export UV_LINK_MODE=copy` to your `.bashrc` to suppress cache warnings from `uv`
 
-Next, install Pytorch:
+Next, install PyTorch (use specific version for flash-attn compatibility):
 
 ```shell
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+uv pip install torch==2.3.1+cu121 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 Then install the core dependencies with:
@@ -63,9 +63,17 @@ To run the example scripts, install the remaining dependencies as follows:
 
 ```shell
 uv pip install datasets transformers datatrove[io] numba wandb
-# Fused kernels
-uv pip install ninja triton "flash-attn>=2.5.0" --no-build-isolation
+
+# Install flash-attn (requires compilation, takes ~5-10 minutes)
+uv pip install setuptools wheel packaging ninja
+uv pip install flash-attn==2.6.3 --no-build-isolation
+
+# Install grouped_gemm for MoE support
+uv pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@main
 ```
+
+> [!NOTE]
+> **For RTX 3090 and similar GPUs**: The above PyTorch 2.3.1 + flash-attn 2.6.3 combination is verified to work. Do not use PyTorch 2.6.0 as it has ABI incompatibility with flash-attn.
 
 Next, log into your Hugging Face and Weights and Biases accounts as follows:
 
