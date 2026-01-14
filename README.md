@@ -41,7 +41,7 @@ To run the code in this project, first create a Python virtual environment using
 
 
 ```shell
-uv venv nanotron --python 3.11 && source nanotron/bin/activate && uv pip install --upgrade pip
+conda create -n testing_env python=3.11
 ```
 
 > [!TIP]
@@ -65,7 +65,7 @@ To run the example scripts, install the remaining dependencies as follows:
 uv pip install datasets transformers datatrove[io] numba wandb
 
 # Install flash-attn (requires compilation, takes ~5-10 minutes)
-uv pip install setuptools wheel packaging ninja
+uv pip install setuptools wheel packaging ninja psutil
 uv pip install flash-attn==2.6.3 --no-build-isolation
 
 # Install grouped_gemm for MoE support
@@ -96,6 +96,12 @@ sudo apt-get install git-lfs
 
 
 ## Quick Start
+
+```shell
+CUDA_DEVICE_MAX_CONNECTIONS=1 WANDB_MODE=disabled \
+  torchrun --nproc_per_node=1 run_train.py \
+  --config-file examples/config_test_simple.yaml
+```
 
 ### Training a tiny Llama model
 
