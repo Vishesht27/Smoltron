@@ -17,14 +17,10 @@
 from typing import Dict, List, Optional, Union
 
 import torch
-try:
-    from flash_attn import bert_padding
-    from flash_attn.flash_attn_interface import (
-        flash_attn_varlen_func,
-    )
-except ImportError:
-    bert_padding = None
-    flash_attn_varlen_func = None
+from flash_attn import bert_padding
+from flash_attn.flash_attn_interface import (
+    flash_attn_varlen_func,
+)
 from torch import nn
 from torch.utils.checkpoint import CheckpointFunction
 
@@ -276,66 +272,36 @@ class CoreAttention(nn.Module):
         q_sequence_mask: torch.Tensor,  # torch.BoolTensor [batch_size, q_length] (can be broadcasted to that size)
         kv_sequence_mask: torch.Tensor,  # torch.BoolTensor [batch_size, kv_length] (can be broadcasted to that size)
     ):
-        if flash_attn_varlen_func is not None:
-            # TODO @thomasw21: Compute once, instead of computing for each layers.
-            cu_seqlens_q = torch.zeros((q_sequence_mask.shape[0] + 1), dtype=torch.int32, device=query_states.device)
-            cu_seqlens_k = torch.zeros((kv_sequence_mask.shape[0] + 1), dtype=torch.int32, device=query_states.device)
-            torch.cumsum(q_sequence_mask.sum(-1, dtype=torch.int32), dim=0, dtype=torch.int32, out=cu_seqlens_q[1:])
-            torch.cumsum(kv_sequence_mask.sum(-1, dtype=torch.int32), dim=0, dtype=torch.int32, out=cu_seqlens_k[1:])
+        from flash_attn.flash_attn_interface import flash_attn_varlen_func
 
-            # TODO(kunhao): flash attn's causal means that the query can only attend to the keys before it. This is not
-            # what we want if we are using kv cache. This is a hack as we always have q_length == 1 when using kv cache.
-            causal = False if q_sequence_mask.shape[1] == 1 else True
+        # TODO @thomasw21: Compute once, instead of computing for each layers.
+        cu_seqlens_q = torch.zeros((q_sequence_mask.shape[0] + 1), dtype=torch.int32, device=query_states.device)
+        cu_seqlens_k = torch.zeros((kv_sequence_mask.shape[0] + 1), dtype=torch.int32, device=query_states.device)
+        torch.cumsum(q_sequence_mask.sum(-1, dtype=torch.int32), dim=0, dtype=torch.int32, out=cu_seqlens_q[1:])
+        torch.cumsum(kv_sequence_mask.sum(-1, dtype=torch.int32), dim=0, dtype=torch.int32, out=cu_seqlens_k[1:])
 
-            # NOTE: this scale is for µTransfer,
-            # in SP, we use sqrt(1/d_h)
-            softmax_scale = 1 / query_states.shape[-1] if self.is_using_mup else None
-            attn_output = flash_attn_varlen_func(
-                q=query_states,
-                k=key_states,
-                v=value_states,
-                cu_seqlens_q=cu_seqlens_q,
-                cu_seqlens_k=cu_seqlens_k,
-                max_seqlen_q=q_sequence_mask.shape[1],
-                max_seqlen_k=kv_sequence_mask.shape[1],
-                dropout_p=0.0,
-                softmax_scale=softmax_scale,
-                causal=causal,
-                return_attn_probs=False,
-            )
+        # TODO(kunhao): flash attn's causal means that the query can only attend to the keys before it. This is not
+        # what we want if we are using kv cache. This is a hack as we always have q_length == 1 when using kv cache.
+        causal = False if q_sequence_mask.shape[1] == 1 else True
 
-            return attn_output
-        else:
-             batch_size = q_sequence_mask.shape[0]
-             q_len = q_sequence_mask.shape[1]
-             kv_len = kv_sequence_mask.shape[1]
-             n_q_heads = self.n_local_q_heads
-             n_kv_heads = self.n_local_kv_heads
-             head_dim = self.d_qk
-             
-             # Reshape to [batch, heads, seq, dim]
-             q = query_states.view(batch_size, q_len, n_q_heads, head_dim).transpose(1, 2)
-             k = key_states.view(batch_size, kv_len, n_kv_heads, head_dim).transpose(1, 2)
-             v = value_states.view(batch_size, kv_len, n_kv_heads, self.d_v).transpose(1, 2)
-             
-             is_causal = False if q_len == 1 else True
-             
-             softmax_scale = 1 / head_dim if self.is_using_mup else None
-             
-             # GQA handling
-             if n_q_heads != n_kv_heads:
-                 n_rep = n_q_heads // n_kv_heads
-                 k = k.repeat_interleave(n_rep, dim=1)
-                 v = v.repeat_interleave(n_rep, dim=1)
+        # NOTE: this scale is for µTransfer,
+        # in SP, we use sqrt(1/d_h)
+        softmax_scale = 1 / query_states.shape[-1] if self.is_using_mup else None
+        attn_output = flash_attn_varlen_func(
+            q=query_states,
+            k=key_states,
+            v=value_states,
+            cu_seqlens_q=cu_seqlens_q,
+            cu_seqlens_k=cu_seqlens_k,
+            max_seqlen_q=q_sequence_mask.shape[1],
+            max_seqlen_k=kv_sequence_mask.shape[1],
+            dropout_p=0.0,
+            softmax_scale=softmax_scale,
+            causal=causal,
+            return_attn_probs=False,
+        )
 
-             # Use SDPA
-             out = torch.nn.functional.scaled_dot_product_attention(
-                  q, k, v, attn_mask=None, dropout_p=0.0, is_causal=is_causal, scale=softmax_scale
-             )
-             
-             # Reshape back to [batch * q_len, heads, dim] format
-             out = out.transpose(1, 2).contiguous().view(batch_size * q_len, n_q_heads, self.d_v)
-             return out
+        return attn_output
 
 
 def pad_to_right(tensor, mask, new_tensor=None):

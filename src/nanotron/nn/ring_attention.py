@@ -1,14 +1,10 @@
 """Ring attention implementation using flash attention adapted from https://github.com/zhuzilin/ring-flash-attention/"""
 import torch
 import torch.distributed as dist
-try:
-    from flash_attn.flash_attn_interface import (
-        _flash_attn_varlen_backward,
-        _flash_attn_varlen_forward,
-    )
-except ImportError:
-    _flash_attn_varlen_backward = None
-    _flash_attn_varlen_forward = None
+from flash_attn.flash_attn_interface import (
+    _flash_attn_varlen_backward,
+    _flash_attn_varlen_forward,
+)
 
 
 def ring_flash_attn_varlen_forward(
@@ -26,9 +22,6 @@ def ring_flash_attn_varlen_forward(
     deterministic=False,
 ):
     comm = RingComm(process_group)
-
-    if _flash_attn_varlen_forward is None:
-        raise ImportError("ring_flash_attn_varlen_forward requires flash_attn to be installed.")
 
     out = None
     lse = None
