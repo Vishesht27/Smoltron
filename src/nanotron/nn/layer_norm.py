@@ -1,5 +1,8 @@
 import torch
-from flash_attn.ops.triton.layer_norm import layer_norm_fn
+try:
+    from flash_attn.ops.triton.layer_norm import layer_norm_fn
+except ImportError:
+    layer_norm_fn = None
 from torch import nn
 
 
@@ -7,6 +10,9 @@ class TritonLayerNorm(nn.LayerNorm):
     def forward(
         self, input, residual=None, dropout_p=0.0, prenorm=False, residual_in_fp32=False, return_dropout_mask=False
     ):
+
+        if layer_norm_fn is None:
+            return super().forward(input)
 
         return layer_norm_fn(
             input,
@@ -39,6 +45,13 @@ class TritonRMSNorm(nn.Module):
     def forward(
         self, input, residual=None, dropout_p=0.0, prenorm=False, residual_in_fp32=False, return_dropout_mask=False
     ):
+
+        if layer_norm_fn is None:
+            input_dtype = input.dtype
+            input = input.to(torch.float32)
+            variance = input.pow(2).mean(-1, keepdim=True)
+            input = input * torch.rsqrt(variance + self.eps)
+            return self.weight * input.to(input_dtype)
 
         return layer_norm_fn(
             input,
