@@ -122,6 +122,37 @@ torchrun --nproc_per_node=1 run_generate.py --ckpt-path checkpoints/{checkpoint_
 
 Increase the value of `--tp` (tensor parallel) to accelerate generation with multiple GPUs and use a larger value of `--pp` (pipeline parallel) for very large models.
 
+### Simple Inference (HF Format)
+
+After you've consolidated your model using the conversion script, you can run a quick conversation test in your terminal:
+
+```shell
+python simple_inference.py --model_path ./hf_model_path --prompt "Once upon a time, there was a little bird named"
+```
+
+### Automated Experiments & Hub Upload
+
+
+For running systemic ablation studies (like GQA sweeps, optimizer tests, or RoPE vs NOPE), you can use the automated experiment wrapper. This script handles training, consolidation of sharded weights, and pushing the final model to the Hugging Face Hub in one command.
+
+```shell
+# Run a full experiment (Train -> Convert to HF -> Push to Hub)
+./run_full_experiment.sh examples/config_250m_ablations.yaml Smoltron-250M-GQA-8
+```
+
+You can also use the standalone push script to move any consolidated checkpoint to the Hub:
+
+```shell
+python push_to_hf.py --model_path ./hf_model_path --repo_id your-username/your-model-name
+```
+
+### 250M Ablation Studies
+We've included a specialized configuration `examples/config_250m_ablations.yaml` designed for running research-grade ablations on consumer hardware (tested on 4x RTX 3090s). It supports:
+- **GQA**: Flexible Grouped Query Attention (4, 8, or 16 groups).
+- **Architecture**: SwiGLU activations, RMSNorm, and Tied Embeddings.
+- **Scale**: Optimized for ~200M to 10B token runs.
+
+
 ### Debugging with VSCode
 To debug with VSCode, add the following configuration to your `launch.json` file:
 
