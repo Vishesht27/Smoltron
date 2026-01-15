@@ -883,7 +883,7 @@ class DistributedTrainer:
             assert self.current_base_dl is not None, "current_base_dl should be defined"
 
             # Log consumption statistics
-            if hasattr(self.current_base_dl, "dataset"):
+            if hasattr(self.current_base_dl, "dataset") and hasattr(self.current_base_dl.dataset, "get_consumption_stats"):
                 for dataset_name, stats in self.current_base_dl.dataset.get_consumption_stats().items():
                     basic_log_entries.extend(
                         [
