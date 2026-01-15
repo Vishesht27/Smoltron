@@ -3,7 +3,7 @@ import glob
 import os
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import List, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union
 
 import dacite
 import torch
@@ -658,6 +658,7 @@ def get_config_from_dict(
         config=dacite.Config(
             cast=[Path],
             type_hooks={
+                float: lambda x: float(x) if isinstance(x, str) else x,
                 torch.dtype: cast_str_to_torch_dtype,
                 PipelineEngine: cast_str_to_pipeline_engine,
                 TensorParallelLinearMode: lambda x: TensorParallelLinearMode[x.upper()],

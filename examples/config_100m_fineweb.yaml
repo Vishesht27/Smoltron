@@ -65,7 +65,7 @@ model:
     rope_scaling: null
     tie_word_embeddings: true
     use_cache: true
-    vocab_size: 49152
+    vocab_size: 128256
 
 optimizer:
   accumulate_grad_in_fp32: true
@@ -100,7 +100,7 @@ profiler: null
 
 tokenizer:
   tokenizer_max_length: null
-  tokenizer_name_or_path: "robot-test/dummy-tokenizer-wordlevel"
+  tokenizer_name_or_path: "HuggingFaceTB/SmolLM3-3B"
   tokenizer_revision: null
 
 tokens:
