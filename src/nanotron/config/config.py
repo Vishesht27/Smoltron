@@ -210,7 +210,7 @@ class DataArgs:
     """Arguments related to the data and data files processing"""
 
     dataset: Optional[
-        Union[PretrainDatasetsArgs, NanosetDatasetsArgs, SFTDatasetsArgs]
+        Union[PretrainDatasetsArgs, NanosetDatasetsArgs, SFTDatasetsArgs, Any]
     ]  # If None we use dummy_infinite_data_generator
     seed: Optional[int]
     num_loading_workers: Optional[int] = 1
@@ -218,6 +218,14 @@ class DataArgs:
     def __post_init__(self):
         if self.seed is None:
             self.seed = DEFAULT_SEED
+
+        if isinstance(self.dataset, dict):
+            if "dataset_folder" in self.dataset:
+                self.dataset = NanosetDatasetsArgs(**self.dataset)
+            elif "sft_dataloader" in self.dataset:
+                self.dataset = SFTDatasetsArgs(**self.dataset)
+            else:
+                self.dataset = PretrainDatasetsArgs(**self.dataset)
 
 
 @dataclass
@@ -414,7 +422,7 @@ class AdamWOptimizerArgs:
 class OptimizerArgs:
     """Arguments related to the optimizer and learning rate"""
 
-    optimizer_factory: Union[SGDOptimizerArgs, AdamWOptimizerArgs]
+    optimizer_factory: Union[SGDOptimizerArgs, AdamWOptimizerArgs, Any]
     zero_stage: int
     weight_decay: float
     clip_grad: Optional[float]
@@ -427,6 +435,12 @@ class OptimizerArgs:
     def __post_init__(self):
         if self.weight_decay_exclude_named_params is None:
             self.weight_decay_exclude_named_params: List[str] = []
+
+        if isinstance(self.optimizer_factory, dict):
+            if self.optimizer_factory.get("name") == "adamW":
+                self.optimizer_factory = AdamWOptimizerArgs(**self.optimizer_factory)
+            elif self.optimizer_factory.get("name") == "sgd":
+                self.optimizer_factory = SGDOptimizerArgs(**self.optimizer_factory)
 
 
 @dataclass
