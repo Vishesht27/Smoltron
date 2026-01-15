@@ -572,7 +572,7 @@ class DistributedTrainer:
 
                 # Training Logs
                 # Track consumed tokens for all dataset folders in current stage
-                if hasattr(self.current_base_dl, "dataset"):
+                if hasattr(self.current_base_dl, "dataset") and hasattr(self.current_base_dl.dataset, "get_consumption_stats"):
                     consumption_stats = self.current_base_dl.dataset.get_consumption_stats()
                     current_stage = self.metadata.data_stages[self.metadata.last_stage_idx]
 
