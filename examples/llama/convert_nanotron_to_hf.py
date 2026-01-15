@@ -17,7 +17,10 @@ from nanotron.models.llama import LlamaForTraining
 from transformers import AutoTokenizer, LlamaForCausalLM
 from transformers import LlamaConfig as HFLlamaConfig
 
-from .convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
+try:
+    from .convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
+except ImportError:
+    from convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
 
 TEST_PROMPT = "What is the meaning of the word chutzpah?\nThe word chutzpah means"
 

@@ -17,7 +17,10 @@ from nanotron.models.llama import LlamaForTraining
 from transformers import LlamaConfig as HFLlamaConfig
 from transformers import LlamaForCausalLM
 
-from .convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
+try:
+    from .convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
+except ImportError:
+    from convert_weights import get_config_mapping, get_weight_mapping, load_nanotron_model
 
 
 def _handle_attention_block(
