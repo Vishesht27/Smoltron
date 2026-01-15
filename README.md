@@ -44,32 +44,28 @@ To run the code in this project, first create a Python virtual environment using
 conda create -n testing_env python=3.11
 ```
 
-> [!TIP]
-> For Hugging Face cluster users, add `export UV_LINK_MODE=copy` to your `.bashrc` to suppress cache warnings from `uv`
 
 Next, install PyTorch (use specific version for flash-attn compatibility):
 
 ```shell
-uv pip install torch==2.3.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+pip install torch==2.3.1+cu121 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 Then install the core dependencies with:
 
 ```shell
-uv pip install -e .
+pip install -e .
 ```
 
 To run the example scripts, install the remaining dependencies as follows:
 
 ```shell
-uv pip install datasets transformers datatrove[io] numba wandb
+pip install datasets transformers datatrove[io] numba wandb
 
 # Install flash-attn (requires compilation, takes ~5-10 minutes)
-uv pip install setuptools wheel packaging ninja psutil
-uv pip install flash-attn==2.6.3 --no-build-isolation
-
-# Install grouped_gemm for MoE support
-uv pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@main
+pip install setuptools wheel packaging ninja psutil
+pip install flash-attn==2.6.3 --no-build-isolation
+pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@main
 ```
 
 > [!NOTE]

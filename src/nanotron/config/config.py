@@ -27,7 +27,7 @@ from nanotron.generation.sampler import SamplerType
 from nanotron.logging import get_logger, human_format
 from nanotron.parallel.pipeline_parallel.engine import PipelineEngine
 from nanotron.parallel.tensor_parallel.nn import TensorParallelLinearMode
-from nanotron.config.models_config import Qwen2Config
+from nanotron.config.models_config import LlamaConfig, Qwen2Config, Starcoder2Config
 
 logger = get_logger(__name__)
 
@@ -319,7 +319,16 @@ class ModelArgs:
             self.dtype = cast_str_to_torch_dtype(self.dtype)
 
         if isinstance(self.model_config, dict):
-            self.model_config = Qwen2Config(**self.model_config)
+            if self.model_config.get("is_llama_config", False):
+                self.model_config = LlamaConfig(**self.model_config)
+            elif self.model_config.get("is_qwen2_config", False):
+                self.model_config = Qwen2Config(**self.model_config)
+            elif self.model_config.get("is_starcoder2_config", False):
+                self.model_config = Starcoder2Config(**self.model_config)
+            else:
+                # Default fallback or error
+                logger.warning("Unknown model config type in dictionary. Trying to load as LlamaConfig by default.")
+                self.model_config = LlamaConfig(**self.model_config)
 
         self.model_config._is_using_mup = isinstance(self.init_method, SpectralMupInit)
 
