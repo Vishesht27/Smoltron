@@ -26,7 +26,7 @@ general:
   benchmark_csv_path: null
   consumed_train_samples: null
   ignore_sanity_checks: true
-  project: tinystories_250m
+  project: multi-gpu_250m
   run: 250m_tinystories_%date_%jobid
   seed: 42
   step: null
@@ -74,9 +74,9 @@ optimizer:
   learning_rate_scheduler:
     learning_rate: 0.0006
     lr_decay_starting_step: null
-    lr_decay_steps: 5000
+    lr_decay_steps: 1526
     lr_decay_style: cosine
-    lr_warmup_steps: 200
+    lr_warmup_steps: 100
     lr_warmup_style: linear
     min_decay_lr: 1e-05
   optimizer_factory:
@@ -89,7 +89,7 @@ optimizer:
   zero_stage: 0
 
 parallelism:
-  dp: 1
+  dp: 4
   expert_parallel_size: 1
   pp: 1
   pp_engine: 1f1b
@@ -110,5 +110,5 @@ tokens:
   limit_val_batches: 0
   micro_batch_size: 8
   sequence_length: 1024
-  train_steps: 5000 # Increased steps for a larger model
+  train_steps: 1526 # ~200M tokens with 4 GPUs (GBS = 131,072)
   val_check_interval: -1
