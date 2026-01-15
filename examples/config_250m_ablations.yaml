@@ -1,0 +1,114 @@
+# 250M Parameter Model on TinyStories
+# Architecture: Decoder-Only, GQA (4 groups), SwiGLU, RMSNorm, Tied Embeddings
+# Hardware: Optimized for RTX 3090 (24GB VRAM)
+
+checkpoints:
+  checkpoint_interval: 500
+  checkpoints_path: checkpoints_250m
+  checkpoints_path_is_shared_file_system: false
+  resume_checkpoint_path: null
+  save_initial_state: false
+
+data_stages:
+- data:
+    dataset:
+      hf_dataset_or_datasets: "roneneldan/TinyStories"
+      hf_dataset_splits: "train"
+      text_column_name: "text"
+      dataset_processing_num_proc_per_process: 4
+      dataset_overwrite_cache: false
+    num_loading_workers: 4
+    seed: 42
+  name: TinyStories Training
+  start_training_step: 1
+
+general:
+  benchmark_csv_path: null
+  consumed_train_samples: null
+  ignore_sanity_checks: true
+  project: tinystories_250m
+  run: 250m_tinystories_%date_%jobid
+  seed: 42
+  step: null
+
+lighteval: null
+
+logging:
+  iteration_step_info_interval: 1
+  log_level: info
+  log_level_replica: info
+
+metrics_logging:
+  log_level: 1
+  log_detail_interval: 1
+
+model:
+  ddp_bucket_cap_mb: 25
+  dtype: bfloat16
+  init_method:
+    std: 0.02
+  make_vocab_size_divisible_by: 1
+  model_config:
+    bos_token_id: 1
+    eos_token_id: 2
+    hidden_act: silu
+    hidden_size: 896
+    initializer_range: 0.02
+    intermediate_size: 2392
+    is_llama_config: true
+    max_position_embeddings: 1024
+    num_attention_heads: 32
+    num_hidden_layers: 16
+    num_key_value_heads: 4 # GQA with 4 groups (8 heads per group)
+    pad_token_id: null
+    pretraining_tp: 1
+    rms_norm_eps: 1e-05
+    rope_scaling: null
+    tie_word_embeddings: true # Shared Embeddings
+    use_cache: true
+    vocab_size: 128256
+
+optimizer:
+  accumulate_grad_in_fp32: true
+  clip_grad: 1.0
+  learning_rate_scheduler:
+    learning_rate: 0.0006
+    lr_decay_starting_step: null
+    lr_decay_steps: 5000
+    lr_decay_style: cosine
+    lr_warmup_steps: 200
+    lr_warmup_style: linear
+    min_decay_lr: 1e-05
+  optimizer_factory:
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1e-08
+    name: adamW
+    torch_adam_is_fused: true
+  weight_decay: 0.1
+  zero_stage: 0
+
+parallelism:
+  dp: 1
+  expert_parallel_size: 1
+  pp: 1
+  pp_engine: 1f1b
+  tp: 1
+  tp_linear_async_communication: false
+  tp_mode: ALL_REDUCE
+
+profiler: null
+
+tokenizer:
+  tokenizer_max_length: null
+  tokenizer_name_or_path: "HuggingFaceTB/SmolLM3-3B"
+  tokenizer_revision: null
+
+tokens:
+  batch_accumulation_per_replica: 4
+  limit_test_batches: 0
+  limit_val_batches: 0
+  micro_batch_size: 8
+  sequence_length: 1024
+  train_steps: 5000 # Increased steps for a larger model
+  val_check_interval: -1
