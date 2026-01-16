@@ -1,10 +1,10 @@
-# 250M Parameter Model on TinyStories
-# Architecture: Decoder-Only, GQA (4 groups), SwiGLU, RMSNorm, Tied Embeddings
-# Hardware: Optimized for RTX 3090 (24GB VRAM)
+# 125M Parameter Stress Test for 4090 GPU
+# Architecture: 22 Layers, 512 Hidden, 128k Vocab (SmolLM3)
+# Global Batch Size: 1,048,576 Tokens
 
 checkpoints:
-  checkpoint_interval: 500
-  checkpoints_path: checkpoints_250m
+  checkpoint_interval: 5
+  checkpoints_path: checkpoints_125m_stress
   checkpoints_path_is_shared_file_system: false
   resume_checkpoint_path: null
   save_initial_state: false
@@ -17,21 +17,19 @@ data_stages:
       text_column_name: "text"
       dataset_processing_num_proc_per_process: 4
       dataset_overwrite_cache: false
-    num_loading_workers: 4
+    num_loading_workers: 8
     seed: 42
-  name: TinyStories Training
+  name: TinyStories Stress Test
   start_training_step: 1
 
 general:
-  benchmark_csv_path: null
+  benchmark_csv_path: benchmark_results.csv
   consumed_train_samples: null
   ignore_sanity_checks: true
-  project: abliations_throughput
-  run: throughput_4096_3_zero1
+  project: stress_test_4090
+  run: 125m_stress_%date
   seed: 42
   step: null
-
-lighteval: null
 
 logging:
   iteration_step_info_interval: 1
@@ -52,33 +50,33 @@ model:
     bos_token_id: 1
     eos_token_id: 2
     hidden_act: silu
-    hidden_size: 896
+    hidden_size: 768
     initializer_range: 0.02
-    intermediate_size: 2392
+    intermediate_size: 2048 
     is_llama_config: true
     max_position_embeddings: 4096
-    num_attention_heads: 32
-    num_hidden_layers: 16
-    num_key_value_heads: 4 # GQA with 4 groups (8 heads per group)
+    num_attention_heads: 12
+    num_hidden_layers: 12
+    num_key_value_heads: 4 # GQA
     pad_token_id: null
     pretraining_tp: 1
     rms_norm_eps: 1e-05
     rope_scaling: null
-    tie_word_embeddings: true # Shared Embeddings
+    tie_word_embeddings: true
     use_cache: true
-    vocab_size: 128256
+    vocab_size: 49152
 
 optimizer:
-  accumulate_grad_in_fp32: false # Disabled to fix NotImplementedError with ZeRO-1
+  accumulate_grad_in_fp32: false
   clip_grad: 1.0
   learning_rate_scheduler:
-    learning_rate: 0.0006
+    learning_rate: 0.001 # Higher LR for smaller model
     lr_decay_starting_step: null
-    lr_decay_steps: 48
+    lr_decay_steps: 5
     lr_decay_style: cosine
-    lr_warmup_steps: 5
+    lr_warmup_steps: 1
     lr_warmup_style: linear
-    min_decay_lr: 1e-05
+    min_decay_lr: 1e-04
   optimizer_factory:
     adam_beta1: 0.9
     adam_beta2: 0.95
@@ -89,27 +87,20 @@ optimizer:
   zero_stage: 1
 
 parallelism:
-  dp: 4
+  dp: 1 # Single GPU Stress Test
   expert_parallel_size: 1
   pp: 1
   pp_engine: 1f1b
   tp: 1
   tp_linear_async_communication: false
   tp_mode: ALL_REDUCE
-  recompute_layer: false # Disabled for max speed
-
-profiler: null
-
-tokenizer:
-  tokenizer_max_length: null
-  tokenizer_name_or_path: "HuggingFaceTB/SmolLM3-3B"
-  tokenizer_revision: null
+  recompute_layer: false # 4096 at 125M should fit on 4090
 
 tokens:
-  batch_accumulation_per_replica: 11 # 11 * 3 * 4 * 4096 = 1,081,344 tokens (~1M GBS)
+  batch_accumulation_per_replica: 16 # 16 * 16 * 1 * 4096 = 1,048,576 GBS
   limit_test_batches: 0
   limit_val_batches: 0
-  micro_batch_size: 3
+  micro_batch_size: 16 # Pushing the 4090
   sequence_length: 4096
-  train_steps: 48 # 48 steps * 1M GBS ≈ 50M tokens
+  train_steps: 5 # 5 steps * 1M GBS = 5M tokens
   val_check_interval: -1
