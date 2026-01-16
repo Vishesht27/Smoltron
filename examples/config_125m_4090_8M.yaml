@@ -1,0 +1,123 @@
+# 125M Parameter Stress Test for 4090 GPU
+# Architecture: 22 Layers, 512 Hidden, 128k Vocab (SmolLM3)
+# Global Batch Size: 1,048,576 Tokens
+
+checkpoints:
+  checkpoint_interval: 50
+  checkpoints_path: checkpoints_125m_stress
+  checkpoints_path_is_shared_file_system: false
+  resume_checkpoint_path: null
+  save_initial_state: false
+
+data_stages:
+- data:
+    dataset:
+      hf_dataset_or_datasets: "roneneldan/TinyStories"
+      hf_dataset_splits: "train"
+      text_column_name: "text"
+      dataset_processing_num_proc_per_process: 4
+      dataset_overwrite_cache: false
+    num_loading_workers: 8
+    seed: 42
+  name: TinyStories Stress Test
+  start_training_step: 1
+
+general:
+  benchmark_csv_path: benchmark_results.csv
+  consumed_train_samples: null
+  ignore_sanity_checks: true
+  project: stress_test_8x4090
+  run: throughput_8x4090_4M_GBS
+  seed: 42
+  step: null
+
+lighteval: null
+
+logging:
+  iteration_step_info_interval: 1
+  log_level: info
+  log_level_replica: info
+
+metrics_logging:
+  log_level: 1
+  log_detail_interval: 1
+
+model:
+  ddp_bucket_cap_mb: 100 # Increased for better 8-GPU efficiency
+  dtype: bfloat16
+  init_method:
+    std: 0.02
+  make_vocab_size_divisible_by: 1
+  model_config:
+    bos_token_id: 1
+    eos_token_id: 2
+    hidden_act: silu
+    hidden_size: 768
+    initializer_range: 0.02
+    intermediate_size: 2048 
+    is_llama_config: true
+    max_position_embeddings: 4096
+    num_attention_heads: 12
+    num_hidden_layers: 12
+    num_key_value_heads: 4 # GQA
+    pad_token_id: null
+    pretraining_tp: 1
+    rms_norm_eps: 1e-05
+    rope_scaling: null
+    tie_word_embeddings: true
+    use_cache: true
+    vocab_size: 49152
+
+optimizer:
+  accumulate_grad_in_fp32: false
+  clip_grad: 1.0
+  learning_rate_scheduler:
+    learning_rate: 0.001 # Higher LR for smaller model
+    lr_decay_starting_step: null
+    lr_decay_steps: 25
+    lr_decay_style: cosine
+    lr_warmup_steps: 3
+    lr_warmup_style: linear
+    min_decay_lr: 1e-04
+  optimizer_factory:
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1e-08
+    name: adamW
+    torch_adam_is_fused: true
+  weight_decay: 0.1
+  zero_stage: 1
+
+parallelism:
+  dp: 8 # Power of 8 GPUs
+  expert_parallel_size: 1
+  pp: 1
+  pp_engine: 1f1b
+  tp: 1
+  tp_linear_async_communication: false
+  tp_mode: ALL_REDUCE
+  recompute_layer: false # Keep this FALSE for max speed!
+
+profiler: null
+
+tokenizer:
+  tokenizer_max_length: null
+  tokenizer_name_or_path: "HuggingFaceTB/SmolLM2-360M"
+  tokenizer_revision: null
+
+tokens:
+  batch_accumulation_per_replica: 64 # 64 * 4 * 8 * 4096 = 8388608 GBS (8M Tokens) (make it 32 for 4M)
+  limit_test_batches: 0
+  limit_val_batches: 0
+  micro_batch_size: 4 # Back to Power of 2
+  sequence_length: 4096
+  train_steps: 25 # 25 steps * 4M GBS = 100M+ tokens
+  val_check_interval: -1
+
+
+## 735K tokens/sec
+
+
+#"MBS: 4 (Keep the alignment perfect)
+#Accumulation: 32 🚀 (GBS = 4 Million tokens)
+#DDP Bucket Cap: 100 MB (Increases communication efficiency by grouping more data together).
