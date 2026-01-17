@@ -71,6 +71,34 @@ pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@
 > [!NOTE]
 > **For RTX 3090 and similar GPUs**: The above PyTorch 2.3.1 + flash-attn 2.6.3 combination is verified to work. Do not use PyTorch 2.6.0 as it has ABI incompatibility with flash-attn.
 
+### RTX 5090 (Blackwell) Quick Setup
+
+For the latest Blackwell-based GPUs like the **RTX 5090**, use nightly PyTorch and compile Flash Attention with Blackwell support (`12.0`):
+
+```shell
+# 1. Install Nightly PyTorch with CUDA 12.8 support
+pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# 2. Install Smoltron core
+pip install -e .
+
+# 3. Install common dependencies
+pip install datasets transformers datatrove[io] numba wandb
+pip install setuptools wheel packaging ninja psutil
+
+# 4. Build Flash Attention from source for Blackwell
+git clone https://github.com/Dao-AILab/flash-attention.git
+cd flash-attention
+export TORCH_CUDA_ARCH_LIST="8.0;9.0;12.0"
+export FLASH_ATTN_SKIP_CUDA_BUILD=FALSE
+export MAX_JOBS=4
+pip install . -v --no-build-isolation
+cd ..
+
+# 5. Install Grouped GEMM
+pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@main
+```
+
 Next, log into your Hugging Face and Weights and Biases accounts as follows:
 
 ```shell
