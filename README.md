@@ -69,11 +69,11 @@ pip install --no-build-isolation git+https://github.com/fanshiqing/grouped_gemm@
 ```
 
 > [!NOTE]
-> **For RTX 3090 and similar GPUs**: The above PyTorch 2.3.1 + flash-attn 2.6.3 combination is verified to work. Do not use PyTorch 2.6.0 as it has ABI incompatibility with flash-attn.
+> **For RTX 3090 and similar GPUs**: The above PyTorch 2.3.1 + flash-attn 2.6.3 combination is verified to work. Do not use PyTorch 2.6.0 as it has ABI incompatibility with flash-attn. 
 
 ### RTX 5090 (Blackwell) Quick Setup
 
-For the latest Blackwell-based GPUs like the **RTX 5090**, use nightly PyTorch and compile Flash Attention with Blackwell support (`12.0`):
+For the latest Blackwell-based GPUs like the **RTX 5090**, use nightly PyTorch and compile Flash Attention with Blackwell support.. This Setup is for CUDA 12.8 version.
 
 ```shell
 # 1. Install Nightly PyTorch with CUDA 12.8 support
