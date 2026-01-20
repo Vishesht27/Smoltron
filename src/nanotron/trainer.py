@@ -779,6 +779,7 @@ class DistributedTrainer:
             ),  # , "1.6E"),
             LogItem("global_batch_size", self.config.global_batch_size_in_tokens, "human_format"),  # , "5d"),
             LogItem("lm_loss", loss_avg.item(), "human_format"),  # , "1.6E"),
+            LogItem("perplexity", torch.exp(loss_avg).item(), "human_format"),
             LogItem("lr", lr, "human_format"),  # , ".3E"),
             LogItem("model_tflops_per_gpu", model_tflops, "human_format"),  # , ".2f"),
             # LogItem("hardware_tflops_per_gpu", hardware_tflops, "human_format"),  # , ".2f"),
