@@ -122,9 +122,9 @@ sudo apt-get install git-lfs
 ## Quick Start
 
 ```shell
-CUDA_DEVICE_MAX_CONNECTIONS=1 WANDB_MODE=disabled \
+CUDA_DEVICE_MAX_CONNECTIONS=1 \
   torchrun --nproc_per_node=1 run_train.py \
-  --config-file examples/config_test_simple.yaml
+  --config-file examples/config_1b_5090_8gpu_1M.yaml
 ```
 
 ### Training a tiny Llama model

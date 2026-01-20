@@ -26,8 +26,8 @@ general:
   benchmark_csv_path: benchmark_results.csv
   consumed_train_samples: null
   ignore_sanity_checks: true
-  project: stress_test_5090_8gpu
-  run: throughput_1b_8x5090_seq4096_mbs2_gbs1M
+  project: 1B_5090_8gpu
+  run: seq4096_mbs2_gbs1M_22layers
   seed: 42
   step: null
 
